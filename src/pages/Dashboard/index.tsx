@@ -1,18 +1,36 @@
-import React, { useState } from 'react';
+import React, { useState, FormEvent } from 'react';
 
 import { FiChevronRight } from 'react-icons/fi';
-// import api from '../../services/api';
+import api from '../../services/api';
 
 import logoImg from '../../assets/logo.svg';
 
 import { Title, Form, Repositories } from './styles';
 
+interface Repository {
+  full_name: string;
+  description: string;
+  owner: {
+    login: string;
+    avatar_url: string;
+  };
+}
+
 const Dasboard: React.FC = () => {
   const [newRepo, setNewRepo] = useState('');
-  const [repositories, setRepositories] = useState([]);
+  const [repositories, setRepositories] = useState<Repository[]>([]);
 
-  function handleAddRepository(): void {
-    return console.log(newRepo);
+  async function handleAddRepository(
+    event: FormEvent<HTMLFormElement>,
+  ): Promise<void> {
+    event.preventDefault();
+
+    const response = await api.get<Repository>(`repos/${newRepo}`);
+
+    const repository = response.data;
+
+    setRepositories([...repositories, repository]);
+    setNewRepo('');
   }
 
   return (
@@ -20,7 +38,7 @@ const Dasboard: React.FC = () => {
       <img src={logoImg} alt="Github Explore" />
       <Title>Explore repositórios no Github</Title>
 
-      <Form>
+      <Form onSubmit={handleAddRepository}>
         <input
           value={newRepo}
           onChange={e => setNewRepo(e.target.value)}
@@ -30,18 +48,20 @@ const Dasboard: React.FC = () => {
       </Form>
 
       <Repositories>
-        <a href="teste">
-          <img
-            src="https://avatars1.githubusercontent.com/u/32467674?s=460&u=1a44fec661f7b8bb352c5c1220a7d5462a45870a&v=4"
-            alt="Lucas Fernando"
-          />
-          <div>
-            <strong>Github-Explorer</strong>
-            <p>Github</p>
-          </div>
+        {repositories.map(repository => (
+          <a key={repository.full_name} href="teste">
+            <img
+              src={repository.owner.avatar_url}
+              alt={repository.owner.login}
+            />
+            <div>
+              <strong>{repository.full_name}</strong>
+              <p>{repository.description}</p>
+            </div>
 
-          <FiChevronRight size={20} />
-        </a>
+            <FiChevronRight size={20} />
+          </a>
+        ))}
       </Repositories>
     </>
   );
